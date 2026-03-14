@@ -1,3 +1,5 @@
+//! Structures related to storing and manipulating scenes to be rendered.
+
 use glam::Vec3;
 
 mod triangle_ref;
@@ -9,6 +11,7 @@ pub use material::Material;
 mod triangle;
 pub use triangle::Triangle;
 
+/// Hold an entire scene which can then be manipulated or rendered.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Scene {
     vertices: Vec<Vec3>,
@@ -17,6 +20,7 @@ pub struct Scene {
 }
 
 impl Scene {
+    /// Creates a new scene given a set of vertices, materials, and triangles.
     pub fn new(
         vertices: impl Into<Vec<Vec3>>,
         materials: impl Into<Vec<Material>>,
@@ -29,6 +33,7 @@ impl Scene {
         }
     }
 
+    /// Returns an iterator which yields references to all the triangles in the scene.
     pub fn triangles<'a>(&'a self) -> impl Iterator<Item = TriangleRef<'a>> {
         self.triangles.iter().map(|t| {
             let vertices = t.vertices();
