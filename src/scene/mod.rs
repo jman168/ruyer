@@ -1,0 +1,88 @@
+use glam::Vec3;
+
+mod triangle_ref;
+pub use triangle_ref::TriangleRef;
+
+mod material;
+pub use material::Material;
+
+mod triangle;
+pub use triangle::Triangle;
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Scene {
+    vertices: Vec<Vec3>,
+    materials: Vec<Material>,
+    triangles: Vec<Triangle>,
+}
+
+impl Scene {
+    pub fn new(
+        vertices: impl Into<Vec<Vec3>>,
+        materials: impl Into<Vec<Material>>,
+        triangles: impl Into<Vec<Triangle>>,
+    ) -> Self {
+        Self {
+            vertices: vertices.into(),
+            materials: materials.into(),
+            triangles: triangles.into(),
+        }
+    }
+
+    pub fn triangles<'a>(&'a self) -> impl Iterator<Item = TriangleRef<'a>> {
+        self.triangles.iter().map(|t| {
+            let vertices = t.vertices();
+
+            TriangleRef::new(
+                [
+                    &self.vertices[vertices[0]],
+                    &self.vertices[vertices[1]],
+                    &self.vertices[vertices[2]],
+                ],
+                &self.materials[*t.material()],
+            )
+        })
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use glam::{usizevec3, vec3};
+
+    #[test]
+    fn test_triangles() {
+        let scene = Scene::new(
+            [
+                vec3(1.0, 1.0, 0.0),
+                vec3(1.0, 0.0, 0.0),
+                vec3(0.0, 0.0, 0.0),
+                vec3(0.0, 1.0, 0.0),
+            ],
+            [
+                Material::new(vec3(1.0, 0.0, 0.0)),
+                Material::new(vec3(0.0, 0.0, 1.0)),
+            ],
+            [
+                Triangle::new(usizevec3(0, 1, 2), 0),
+                Triangle::new(usizevec3(2, 3, 0), 1),
+            ],
+        );
+
+        let mut triangles = scene.triangles();
+
+        let triangle = triangles.next().unwrap();
+        assert_eq!(triangle.vertices()[0], &vec3(1.0, 1.0, 0.0));
+        assert_eq!(triangle.vertices()[1], &vec3(1.0, 0.0, 0.0));
+        assert_eq!(triangle.vertices()[2], &vec3(0.0, 0.0, 0.0));
+        assert_eq!(triangle.material(), &Material::new(vec3(1.0, 0.0, 0.0)));
+
+        let triangle = triangles.next().unwrap();
+        assert_eq!(triangle.vertices()[0], &vec3(0.0, 0.0, 0.0));
+        assert_eq!(triangle.vertices()[1], &vec3(0.0, 1.0, 0.0));
+        assert_eq!(triangle.vertices()[2], &vec3(1.0, 1.0, 0.0));
+        assert_eq!(triangle.material(), &Material::new(vec3(0.0, 0.0, 1.0)));
+
+        assert_eq!(triangles.next(), None);
+    }
+}
