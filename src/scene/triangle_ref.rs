@@ -1,4 +1,4 @@
-use crate::scene::Material;
+use crate::{geometry::Triangle, scene::Material};
 
 use glam::Vec3;
 
@@ -9,15 +9,16 @@ pub struct TriangleRef<'a> {
     material: &'a Material,
 }
 
+impl<'a> Triangle for TriangleRef<'a> {
+    fn vertices(&self) -> [&Vec3; 3] {
+        self.vertices
+    }
+}
+
 impl<'a> TriangleRef<'a> {
     /// Creates a new triangle referance.
     pub fn new(vertices: [&'a Vec3; 3], material: &'a Material) -> Self {
         Self { vertices, material }
-    }
-
-    /// Returns the vertices of the triangle.
-    pub fn vertices(&self) -> [&'a Vec3; 3] {
-        self.vertices
     }
 
     /// Returns the material of the triangle.

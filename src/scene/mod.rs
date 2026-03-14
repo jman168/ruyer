@@ -5,18 +5,18 @@ use glam::Vec3;
 mod triangle_ref;
 pub use triangle_ref::TriangleRef;
 
+mod triangle_idx;
+pub use triangle_idx::TriangleIdx;
+
 mod material;
 pub use material::Material;
-
-mod triangle;
-pub use triangle::Triangle;
 
 /// Hold an entire scene which can then be manipulated or rendered.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Scene {
     vertices: Vec<Vec3>,
     materials: Vec<Material>,
-    triangles: Vec<Triangle>,
+    triangles: Vec<TriangleIdx>,
 }
 
 impl Scene {
@@ -24,7 +24,7 @@ impl Scene {
     pub fn new(
         vertices: impl Into<Vec<Vec3>>,
         materials: impl Into<Vec<Material>>,
-        triangles: impl Into<Vec<Triangle>>,
+        triangles: impl Into<Vec<TriangleIdx>>,
     ) -> Self {
         Self {
             vertices: vertices.into(),
@@ -53,6 +53,7 @@ impl Scene {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::geometry::Triangle;
     use glam::{usizevec3, vec3};
 
     #[test]
@@ -69,8 +70,8 @@ mod test {
                 Material::new(vec3(0.0, 0.0, 1.0)),
             ],
             [
-                Triangle::new(usizevec3(0, 1, 2), 0),
-                Triangle::new(usizevec3(2, 3, 0), 1),
+                TriangleIdx::new(usizevec3(0, 1, 2), 0),
+                TriangleIdx::new(usizevec3(2, 3, 0), 1),
             ],
         );
 
