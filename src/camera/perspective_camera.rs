@@ -45,7 +45,7 @@ impl Camera for PerspectiveCamera {
 
         // Compute the normalized ray direction from the eye point to the point on the viewing
         // plane.
-        let ray_direction = self.rotation * (viewing_plane_point - self.eye).normalize();
+        let ray_direction = self.rotation * viewing_plane_point.normalize();
 
         Ray::new(self.eye, ray_direction)
     }
