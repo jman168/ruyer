@@ -121,5 +121,10 @@ mod test {
         assert_eq!(intersection.t(), &1.0);
         assert_eq!(intersection.normal(), &vec3(0.0, 0.0, 1.0));
         assert_eq!(intersection.point(), vec3(0.25, 0.25, 0.0));
+
+        let ray = Ray::new(vec3(0.25, 0.25, 1.0), vec3(0.0, 0.0, 1.0));
+
+        let intersection = triangle.ray_intersection(&ray);
+        assert_eq!(intersection, None);
     }
 }

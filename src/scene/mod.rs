@@ -11,6 +11,8 @@ pub use triangle_idx::TriangleIdx;
 mod material;
 pub use material::Material;
 
+use crate::geometry::{Ray, RayIntersection, Triangle};
+
 /// Hold an entire scene which can then be manipulated or rendered.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Scene {
@@ -47,6 +49,30 @@ impl Scene {
                 &self.materials[*t.material()],
             )
         })
+    }
+
+    /// Returns [`RayIntersection`] for the closest intersection in the scene should it exist.
+    pub fn ray_intersection<'a>(&self, ray: &'a Ray) -> Option<RayIntersection<'a>> {
+        let mut best_intersection: Option<RayIntersection<'a>> = None;
+
+        for triangle in self.triangles() {
+            // If the ray intersects the triangle.
+            if let Some(intersection) = triangle.ray_intersection(ray) {
+                // If we have a best intersection.
+                if let Some(best_intersection) = &mut best_intersection {
+                    // If this intersection is closer to the origin, we keep it.
+                    if intersection.t() < best_intersection.t() {
+                        *best_intersection = intersection;
+                    }
+                }
+                // If we don't have a best intersection yet, this one defaults to the best.
+                else {
+                    best_intersection = Some(intersection);
+                }
+            }
+        }
+
+        best_intersection
     }
 }
 
@@ -90,5 +116,32 @@ mod test {
         assert_eq!(triangle.material(), &Material::new(vec3(0.0, 0.0, 1.0)));
 
         assert_eq!(triangles.next(), None);
+    }
+
+    #[test]
+    fn test_ray_intersection() {
+        let scene = Scene::new(
+            [
+                vec3(1.0, 1.0, 0.0),
+                vec3(0.0, 1.0, 0.0),
+                vec3(0.0, 0.0, 0.0),
+                vec3(1.0, 1.0, 1.0),
+                vec3(0.0, 1.0, 1.0),
+                vec3(0.0, 0.0, 1.0),
+            ],
+            [Material::new(vec3(1.0, 1.0, 1.0))],
+            [
+                TriangleIdx::new(usizevec3(0, 1, 2), 0),
+                TriangleIdx::new(usizevec3(3, 4, 5), 0),
+            ],
+        );
+
+        let ray = Ray::new(vec3(0.25, 0.25, 2.0), vec3(0.0, 0.0, -1.0));
+
+        let intersection = scene.ray_intersection(&ray).unwrap();
+
+        assert_eq!(intersection.t(), &1.0);
+        assert_eq!(intersection.normal(), &vec3(0.0, 0.0, 1.0));
+        assert_eq!(intersection.point(), vec3(0.25, 0.25, 1.0));
     }
 }
