@@ -28,12 +28,9 @@ mod test {
                 vec3(0.0, 548.8, 0.0),     // front right
             ],
             [
-                // White
-                Material::new(vec3(0.73, 0.73, 0.73)),
-                // Green
-                Material::new(vec3(0.0, 0.481, 0.0)),
-                // Red
-                Material::new(vec3(0.657, 0.0, 0.0)),
+                Material::new(vec3(0.73, 0.73, 0.73)), // White
+                Material::new(vec3(0.0, 0.481, 0.0)),  // Green
+                Material::new(vec3(0.657, 0.0, 0.0)),  // Red
             ],
             [
                 // Floor
