@@ -2,3 +2,6 @@
 
 mod triangle;
 pub use triangle::Triangle;
+
+mod ray;
+pub use ray::{Ray, RayIntersection};
