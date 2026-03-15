@@ -6,3 +6,10 @@ edition = "2024"
 [dependencies]
 glam = "0.32"
 image = "0.25"
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "cornell_box"
+harness = false
