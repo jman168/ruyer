@@ -9,6 +9,7 @@ gltf = "1.4"
 image = "0.25"
 
 [dev-dependencies]
+clap = { version = "4.6", features = ["derive"] }
 criterion = "0.5"
 
 [[bench]]

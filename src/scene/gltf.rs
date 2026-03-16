@@ -1,4 +1,4 @@
-use glam::{Vec2, Vec3, quat, usizevec3, vec2, vec3};
+use glam::{Mat4, Vec2, Vec3, Vec4Swizzles, quat, usizevec3, vec2, vec3};
 use gltf::{Document, Node, Result, buffer::Data, camera::Projection, mesh::Mode};
 use std::path::Path;
 
@@ -37,7 +37,7 @@ impl Scene {
                 let pbr = mat.pbr_metallic_roughness();
                 let base_color = pbr.base_color_factor();
 
-                Material::new(vec3(base_color[0], base_color[0], base_color[0]))
+                Material::new(vec3(base_color[0], base_color[1], base_color[2]))
             })
             .collect()
     }
@@ -52,6 +52,8 @@ impl Scene {
         let Some(mesh) = node.mesh() else {
             return;
         };
+
+        let transform = Mat4::from_cols_array_2d(&node.transform().matrix());
 
         for primitive in mesh.primitives() {
             // We don't support any type of primitive that is not pure triangles.
@@ -68,6 +70,7 @@ impl Scene {
                 .read_positions()
                 .expect("Mesh primitive has no positions")
                 .map(Vec3::from)
+                .map(|p| (transform * p.extend(1.0)).xyz())
                 .collect();
             let num_positions = positions.len();
 
@@ -75,6 +78,7 @@ impl Scene {
                 .read_normals()
                 .expect("Mesh primitive has no normals")
                 .map(Vec3::from)
+                .map(|n| (transform * n.extend(0.0)).xyz())
                 .collect();
 
             let uvs: Vec<Vec2> = reader
@@ -130,7 +134,10 @@ impl Scene {
     /// Returns the first perspective camera in the document if it exists.
     fn get_camera(document: &Document) -> Option<Box<dyn Camera>> {
         for node in document.nodes() {
-            let camera = node.camera()?;
+            let Some(camera) = node.camera() else {
+                continue;
+            };
+
             let Projection::Perspective(perspective) = camera.projection() else {
                 continue;
             };
