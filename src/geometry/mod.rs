@@ -5,3 +5,6 @@ pub use triangle::Triangle;
 
 mod ray;
 pub use ray::{Ray, RayIntersection};
+
+mod vertex;
+pub use vertex::Vertex;

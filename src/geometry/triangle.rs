@@ -1,38 +1,34 @@
 use glam::Vec3;
 
-use crate::geometry::{Ray, RayIntersection};
+use crate::geometry::{Ray, RayIntersection, Vertex};
 
 /// Trait for representing triangles.
 pub trait Triangle {
     /// Returns the three vertices of the triangle.
-    fn vertices(&self) -> [&Vec3; 3];
+    fn vertices(&self) -> [&Vertex; 3];
 
-    /// Returns the normal of the triangle assuming the triangle vertices are counter clockwise
-    /// oriented.
+    /// Gets the points of the triangle.
+    fn points(&self) -> [&Vec3; 3] {
+        self.vertices().map(|v| v.position())
+    }
+
+    /// Returns the normal of the triangle computed as the average of the three vertex normals.
     fn normal(&self) -> Vec3 {
-        let v = self.vertices();
-
-        let e1 = v[1] - v[0];
-        let e2 = v[2] - v[0];
-        e1.cross(e2).normalize()
+        self.vertices()
+            .into_iter()
+            .map(|v| v.normal())
+            .sum::<Vec3>()
+            / 3.0
     }
 
     /// Returns [`RayIntersection`] of the ray equation if there was an intersection with the triangle.
     ///
     /// The default implementation uses the [Möller–Trumbore intersection algorithm](https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm).
-    ///
-    /// NOTE: This algorithm DOES perform backface culling assuming CCW-wound triangles.
     fn ray_intersection<'a>(&self, ray: &'a Ray) -> Option<RayIntersection<'a>> {
-        let vertices = self.vertices();
+        let points = self.points();
 
-        let edge1 = vertices[1] - vertices[0];
-        let edge2 = vertices[2] - vertices[0];
-
-        // Backface culling, assuming CCW-wound triangles.
-        let normal = edge1.cross(edge2); // no need to normalize
-        if normal.dot(*ray.direction()) > 0.0 {
-            return None;
-        }
+        let edge1 = points[1] - points[0];
+        let edge2 = points[2] - points[0];
 
         let ray_cross_e2 = ray.direction().cross(edge2);
         let det = edge1.dot(ray_cross_e2);
@@ -43,7 +39,7 @@ pub trait Triangle {
         }
 
         let inv_det = 1.0 / det;
-        let s = ray.origin() - vertices[0];
+        let s = ray.origin() - points[0];
         let u = inv_det * s.dot(ray_cross_e2);
 
         // Ray passes outside edge2's bounds
@@ -65,7 +61,7 @@ pub trait Triangle {
 
         // Ray intersection
         if t > f32::EPSILON {
-            Some(RayIntersection::new(t, normal.normalize(), ray))
+            Some(RayIntersection::new(t, self.normal(), ray))
         }
         // This means that there is a line intersection but not a ray intersection.
         else {
@@ -77,20 +73,20 @@ pub trait Triangle {
 #[cfg(test)]
 mod test {
     use super::*;
-    use glam::vec3;
+    use glam::{vec2, vec3};
 
     struct TestTriangle {
-        vertices: [Vec3; 3],
+        vertices: [Vertex; 3],
     }
 
     impl TestTriangle {
-        fn new(vertices: [Vec3; 3]) -> Self {
+        fn new(vertices: [Vertex; 3]) -> Self {
             Self { vertices }
         }
     }
 
     impl Triangle for TestTriangle {
-        fn vertices(&self) -> [&Vec3; 3] {
+        fn vertices(&self) -> [&Vertex; 3] {
             self.vertices.each_ref()
         }
     }
@@ -98,9 +94,9 @@ mod test {
     #[test]
     fn test_normal() {
         let triangle = TestTriangle::new([
-            vec3(1.0, 1.0, 0.0),
-            vec3(0.0, 1.0, 0.0),
-            vec3(0.0, 0.0, 0.0),
+            Vertex::new(vec3(1.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0), vec2(0.0, 0.0)),
+            Vertex::new(vec3(0.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0), vec2(0.0, 0.0)),
+            Vertex::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0), vec2(0.0, 0.0)),
         ]);
 
         assert_eq!(triangle.normal(), vec3(0.0, 0.0, 1.0));
@@ -109,9 +105,9 @@ mod test {
     #[test]
     fn test_ray_intersection() {
         let triangle = TestTriangle::new([
-            vec3(1.0, 1.0, 0.0),
-            vec3(0.0, 1.0, 0.0),
-            vec3(0.0, 0.0, 0.0),
+            Vertex::new(vec3(1.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0), vec2(0.0, 0.0)),
+            Vertex::new(vec3(0.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0), vec2(0.0, 0.0)),
+            Vertex::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0), vec2(0.0, 0.0)),
         ]);
 
         let ray = Ray::new(vec3(0.25, 0.25, 1.0), vec3(0.0, 0.0, -1.0));

@@ -1,23 +1,24 @@
-use crate::{geometry::Triangle, scene::Material};
-
-use glam::Vec3;
+use crate::{
+    geometry::Triangle,
+    scene::{Material, Vertex},
+};
 
 /// Referance to an expanded triangle structure.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct TriangleRef<'a> {
-    vertices: [&'a Vec3; 3],
+    vertices: [&'a Vertex; 3],
     material: &'a Material,
 }
 
 impl<'a> Triangle for TriangleRef<'a> {
-    fn vertices(&self) -> [&Vec3; 3] {
+    fn vertices(&self) -> [&Vertex; 3] {
         self.vertices
     }
 }
 
 impl<'a> TriangleRef<'a> {
     /// Creates a new triangle referance.
-    pub fn new(vertices: [&'a Vec3; 3], material: &'a Material) -> Self {
+    pub fn new(vertices: [&'a Vertex; 3], material: &'a Material) -> Self {
         Self { vertices, material }
     }
 

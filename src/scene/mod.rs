@@ -1,6 +1,6 @@
 //! Structures related to storing and manipulating scenes to be rendered.
 
-use glam::Vec3;
+use crate::geometry::Vertex;
 
 mod triangle_ref;
 pub use triangle_ref::TriangleRef;
@@ -11,12 +11,14 @@ pub use triangle_idx::TriangleIdx;
 mod material;
 pub use material::Material;
 
+mod gltf;
+
 use crate::geometry::{Ray, RayIntersection, Triangle};
 
 /// Hold an entire scene which can then be manipulated or rendered.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Scene {
-    vertices: Vec<Vec3>,
+    vertices: Vec<Vertex>,
     materials: Vec<Material>,
     triangles: Vec<TriangleIdx>,
 }
@@ -24,7 +26,7 @@ pub struct Scene {
 impl Scene {
     /// Creates a new scene given a set of vertices, materials, and triangles.
     pub fn new(
-        vertices: impl Into<Vec<Vec3>>,
+        vertices: impl Into<Vec<Vertex>>,
         materials: impl Into<Vec<Material>>,
         triangles: impl Into<Vec<TriangleIdx>>,
     ) -> Self {
@@ -84,16 +86,16 @@ impl Scene {
 mod test {
     use super::*;
     use crate::geometry::Triangle;
-    use glam::{usizevec3, vec3};
+    use glam::{usizevec3, vec2, vec3};
 
     #[test]
     fn test_triangles() {
         let scene = Scene::new(
             [
-                vec3(1.0, 1.0, 0.0),
-                vec3(1.0, 0.0, 0.0),
-                vec3(0.0, 0.0, 0.0),
-                vec3(0.0, 1.0, 0.0),
+                Vertex::new(vec3(1.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0), vec2(0.0, 0.0)),
+                Vertex::new(vec3(1.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0), vec2(0.0, 0.0)),
+                Vertex::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0), vec2(0.0, 0.0)),
+                Vertex::new(vec3(0.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0), vec2(0.0, 0.0)),
             ],
             [
                 Material::new(vec3(1.0, 0.0, 0.0)),
@@ -108,16 +110,18 @@ mod test {
         let mut triangles = scene.triangles();
 
         let triangle = triangles.next().unwrap();
-        assert_eq!(triangle.vertices()[0], &vec3(1.0, 1.0, 0.0));
-        assert_eq!(triangle.vertices()[1], &vec3(1.0, 0.0, 0.0));
-        assert_eq!(triangle.vertices()[2], &vec3(0.0, 0.0, 0.0));
+        assert_eq!(triangle.vertices()[0].position(), &vec3(1.0, 1.0, 0.0));
+        assert_eq!(triangle.vertices()[1].position(), &vec3(1.0, 0.0, 0.0));
+        assert_eq!(triangle.vertices()[2].position(), &vec3(0.0, 0.0, 0.0));
         assert_eq!(triangle.material(), &Material::new(vec3(1.0, 0.0, 0.0)));
+        assert_eq!(triangle.normal(), vec3(0.0, 0.0, 1.0));
 
         let triangle = triangles.next().unwrap();
-        assert_eq!(triangle.vertices()[0], &vec3(0.0, 0.0, 0.0));
-        assert_eq!(triangle.vertices()[1], &vec3(0.0, 1.0, 0.0));
-        assert_eq!(triangle.vertices()[2], &vec3(1.0, 1.0, 0.0));
+        assert_eq!(triangle.vertices()[0].position(), &vec3(0.0, 0.0, 0.0));
+        assert_eq!(triangle.vertices()[1].position(), &vec3(0.0, 1.0, 0.0));
+        assert_eq!(triangle.vertices()[2].position(), &vec3(1.0, 1.0, 0.0));
         assert_eq!(triangle.material(), &Material::new(vec3(0.0, 0.0, 1.0)));
+        assert_eq!(triangle.normal(), vec3(0.0, 0.0, 1.0));
 
         assert_eq!(triangles.next(), None);
     }
@@ -126,12 +130,12 @@ mod test {
     fn test_ray_intersection() {
         let scene = Scene::new(
             [
-                vec3(1.0, 1.0, 0.0),
-                vec3(0.0, 1.0, 0.0),
-                vec3(0.0, 0.0, 0.0),
-                vec3(1.0, 1.0, 1.0),
-                vec3(0.0, 1.0, 1.0),
-                vec3(0.0, 0.0, 1.0),
+                Vertex::new(vec3(1.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0), vec2(0.0, 0.0)),
+                Vertex::new(vec3(0.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0), vec2(0.0, 0.0)),
+                Vertex::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0), vec2(0.0, 0.0)),
+                Vertex::new(vec3(1.0, 1.0, 1.0), vec3(0.0, 0.0, 1.0), vec2(0.0, 0.0)),
+                Vertex::new(vec3(0.0, 1.0, 1.0), vec3(0.0, 0.0, 1.0), vec2(0.0, 0.0)),
+                Vertex::new(vec3(0.0, 0.0, 1.0), vec3(0.0, 0.0, 1.0), vec2(0.0, 0.0)),
             ],
             [Material::new(vec3(1.0, 1.0, 1.0))],
             [
@@ -148,8 +152,8 @@ mod test {
         assert_eq!(intersection.normal(), &vec3(0.0, 0.0, 1.0));
         assert_eq!(intersection.point(), vec3(0.25, 0.25, 1.0));
 
-        assert_eq!(triangle.vertices()[0], &vec3(1.0, 1.0, 1.0));
-        assert_eq!(triangle.vertices()[1], &vec3(0.0, 1.0, 1.0));
-        assert_eq!(triangle.vertices()[2], &vec3(0.0, 0.0, 1.0));
+        assert_eq!(triangle.vertices()[0].position(), &vec3(1.0, 1.0, 1.0));
+        assert_eq!(triangle.vertices()[1].position(), &vec3(0.0, 1.0, 1.0));
+        assert_eq!(triangle.vertices()[2].position(), &vec3(0.0, 0.0, 1.0));
     }
 }
