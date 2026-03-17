@@ -15,3 +15,8 @@ criterion = "0.5"
 [[bench]]
 name = "cornell_box"
 harness = false
+
+[profile.profiling]
+inherits = "release"
+debug = true          # Include debug symbols
+strip = false         # Don't strip symbols
