@@ -98,8 +98,8 @@ mod test {
                 Vertex::new(vec3(0.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0), vec2(0.0, 0.0)),
             ],
             [
-                Material::new(vec3(1.0, 0.0, 0.0)),
-                Material::new(vec3(0.0, 0.0, 1.0)),
+                Material::new(vec3(1.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0)),
+                Material::new(vec3(0.0, 0.0, 1.0), vec3(0.0, 0.0, 0.0)),
             ],
             [
                 TriangleIdx::new(usizevec3(0, 1, 2), 0),
@@ -113,14 +113,20 @@ mod test {
         assert_eq!(triangle.vertices()[0].position(), &vec3(1.0, 1.0, 0.0));
         assert_eq!(triangle.vertices()[1].position(), &vec3(1.0, 0.0, 0.0));
         assert_eq!(triangle.vertices()[2].position(), &vec3(0.0, 0.0, 0.0));
-        assert_eq!(triangle.material(), &Material::new(vec3(1.0, 0.0, 0.0)));
+        assert_eq!(
+            triangle.material(),
+            &Material::new(vec3(1.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0))
+        );
         assert_eq!(triangle.normal(), vec3(0.0, 0.0, 1.0));
 
         let triangle = triangles.next().unwrap();
         assert_eq!(triangle.vertices()[0].position(), &vec3(0.0, 0.0, 0.0));
         assert_eq!(triangle.vertices()[1].position(), &vec3(0.0, 1.0, 0.0));
         assert_eq!(triangle.vertices()[2].position(), &vec3(1.0, 1.0, 0.0));
-        assert_eq!(triangle.material(), &Material::new(vec3(0.0, 0.0, 1.0)));
+        assert_eq!(
+            triangle.material(),
+            &Material::new(vec3(0.0, 0.0, 1.0), vec3(0.0, 0.0, 0.0))
+        );
         assert_eq!(triangle.normal(), vec3(0.0, 0.0, 1.0));
 
         assert_eq!(triangles.next(), None);
@@ -137,7 +143,7 @@ mod test {
                 Vertex::new(vec3(0.0, 1.0, 1.0), vec3(0.0, 0.0, 1.0), vec2(0.0, 0.0)),
                 Vertex::new(vec3(0.0, 0.0, 1.0), vec3(0.0, 0.0, 1.0), vec2(0.0, 0.0)),
             ],
-            [Material::new(vec3(1.0, 1.0, 1.0))],
+            [Material::new(vec3(1.0, 1.0, 1.0), vec3(0.0, 0.0, 0.0))],
             [
                 TriangleIdx::new(usizevec3(0, 1, 2), 0),
                 TriangleIdx::new(usizevec3(3, 4, 5), 0),

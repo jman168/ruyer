@@ -1,4 +1,4 @@
-use glam::{Mat4, Vec2, Vec3, Vec4Swizzles, quat, usizevec3, vec2, vec3};
+use glam::{Mat4, Vec2, Vec3, Vec4, Vec4Swizzles, quat, usizevec3, vec2, vec3};
 use gltf::{Document, Node, Result, buffer::Data, camera::Projection, mesh::Mode};
 use std::path::Path;
 
@@ -34,10 +34,13 @@ impl Scene {
         document
             .materials()
             .map(|mat| {
-                let pbr = mat.pbr_metallic_roughness();
-                let base_color = pbr.base_color_factor();
+                let emission =
+                    Vec3::from(mat.emissive_factor()) * mat.emissive_strength().unwrap_or(1.0);
 
-                Material::new(vec3(base_color[0], base_color[1], base_color[2]))
+                let pbr = mat.pbr_metallic_roughness();
+                let base_color = Vec4::from(pbr.base_color_factor()).xyz();
+
+                Material::new(base_color, emission)
             })
             .collect()
     }

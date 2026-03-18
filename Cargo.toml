@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 glam = "0.32"
-gltf = "1.4"
+gltf = { version = "1.4", features = ["KHR_materials_emissive_strength"] }
 image = "0.25"
 rand = "0.10"
 
