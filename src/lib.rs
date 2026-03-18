@@ -1,6 +1,7 @@
 pub mod camera;
 pub mod geometry;
 pub mod render;
+pub mod sampling;
 pub mod scene;
 
 // #[cfg(test)]

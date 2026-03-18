@@ -7,8 +7,11 @@ edition = "2024"
 glam = "0.32"
 gltf = "1.4"
 image = "0.25"
+rand = "0.10"
 
 [dev-dependencies]
+approx = "0.5"
+glam = { version = "0.32", features = ["approx"] }
 clap = { version = "4.6", features = ["derive"] }
 criterion = "0.5"
 
