@@ -11,6 +11,14 @@ use crate::{
     scene::{Material, Scene},
 };
 
+fn lin2srgb(value: f32) -> f32 {
+    if value <= 0.0031308 {
+        (12.92 * value).clamp(0.0, 1.0)
+    } else {
+        (1.055 * value.powf(1.0 / 2.4) - 0.055).clamp(0.0, 1.0)
+    }
+}
+
 /// Generates a transform matrix such that the z axis points in the same direction as n and the x
 /// and y axis are tangent and bitangent.
 ///
@@ -78,10 +86,13 @@ pub fn ray_trace(
             let mut color = Vec3::ZERO;
 
             for _ in 0..256 {
-                color += Li(scene, &ray, 10);
+                color += Li(scene, &ray, 5);
             }
 
-            let color = (color * 255.0 / 256.0).as_u8vec3();
+            let color = color / 256.0;
+            let color = color.map(lin2srgb);
+
+            let color = (color * 255.0).as_u8vec3();
             img.put_pixel(i.into(), j.into(), Rgb([color.x, color.y, color.z]));
         }
     }
