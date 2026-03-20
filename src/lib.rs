@@ -1,5 +1,6 @@
 // pub mod camera;
 pub mod geometry;
+pub mod object;
 // pub mod render;
 // pub mod sampling;
 // pub mod scene;
