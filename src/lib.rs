@@ -1,8 +1,8 @@
-pub mod camera;
+// pub mod camera;
 pub mod geometry;
-pub mod render;
-pub mod sampling;
-pub mod scene;
+// pub mod render;
+// pub mod sampling;
+// pub mod scene;
 
 // #[cfg(test)]
 // mod test {

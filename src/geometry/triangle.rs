@@ -1,34 +1,38 @@
+use crate::geometry::{Ray, RayIntersection, Shape, Vertex, VertexIdx};
 use glam::Vec3;
+use std::ops::Index;
 
-use crate::geometry::{Ray, RayIntersection, Vertex};
+/// Structure for storing a single triangle.
+pub struct Triangle {
+    vertices: [VertexIdx; 3],
+}
 
-/// Trait for representing triangles.
-pub trait Triangle {
-    /// Returns the three vertices of the triangle.
-    fn vertices(&self) -> [&Vertex; 3];
-
-    /// Gets the points of the triangle.
-    fn points(&self) -> [&Vec3; 3] {
-        self.vertices().map(|v| v.position())
+impl Triangle {
+    /// Creates a new triangle given three vertex indices.
+    pub fn new(vertices: [VertexIdx; 3]) -> Self {
+        Self { vertices }
     }
 
-    /// Returns the normal of the triangle computed as the average of the three vertex normals.
-    fn normal(&self) -> Vec3 {
-        self.vertices()
-            .into_iter()
-            .map(|v| v.normal())
+    /// Returns the normal of the triangle.
+    pub fn normal<S>(&self, scene: &S) -> Vec3
+    where
+        S: Index<VertexIdx, Output = Vertex>,
+    {
+        self.vertices
+            .iter()
+            .map(|idx| scene[*idx].normal())
             .sum::<Vec3>()
             / 3.0
     }
+}
 
-    /// Returns [`RayIntersection`] of the ray equation if there was an intersection with the triangle.
-    ///
-    /// The default implementation uses the [Möller–Trumbore intersection algorithm](https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm).
-    fn ray_intersection<'a>(&self, ray: &'a Ray) -> Option<RayIntersection<'a>> {
-        let points = self.points();
-
-        let edge1 = points[1] - points[0];
-        let edge2 = points[2] - points[0];
+impl<S> Shape<S> for Triangle
+where
+    S: Index<VertexIdx, Output = Vertex>,
+{
+    fn ray_intersection<'a>(&self, ray: &'a Ray, scene: &S) -> Option<RayIntersection<'a>> {
+        let edge1 = scene[self.vertices[1]].position() - scene[self.vertices[0]].position();
+        let edge2 = scene[self.vertices[2]].position() - scene[self.vertices[0]].position();
 
         let ray_cross_e2 = ray.direction().cross(edge2);
         let det = edge1.dot(ray_cross_e2);
@@ -39,7 +43,7 @@ pub trait Triangle {
         }
 
         let inv_det = 1.0 / det;
-        let s = ray.origin() - points[0];
+        let s = ray.origin() - scene[self.vertices[0]].position();
         let u = inv_det * s.dot(ray_cross_e2);
 
         // Ray passes outside edge2's bounds
@@ -61,7 +65,7 @@ pub trait Triangle {
 
         // Ray intersection
         if t > f32::EPSILON {
-            Some(RayIntersection::new(t, self.normal(), ray))
+            Some(RayIntersection::new(t, self.normal(scene), ray))
         }
         // This means that there is a line intersection but not a ray intersection.
         else {
@@ -70,49 +74,48 @@ pub trait Triangle {
     }
 }
 
+/// A struct used for accessing a triangle by its index in some container.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct TriangleIdx(pub u32);
+
+#[cfg(test)]
+impl Index<TriangleIdx> for Vec<Triangle> {
+    type Output = Triangle;
+
+    fn index(&self, index: TriangleIdx) -> &Self::Output {
+        &self[index.0 as usize]
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
     use glam::{vec2, vec3};
 
-    struct TestTriangle {
-        vertices: [Vertex; 3],
-    }
-
-    impl TestTriangle {
-        fn new(vertices: [Vertex; 3]) -> Self {
-            Self { vertices }
-        }
-    }
-
-    impl Triangle for TestTriangle {
-        fn vertices(&self) -> [&Vertex; 3] {
-            self.vertices.each_ref()
-        }
+    fn test_vertices() -> Vec<Vertex> {
+        vec![
+            Vertex::new(vec3(1.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0), vec2(0.0, 0.0)),
+            Vertex::new(vec3(0.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0), vec2(0.0, 0.0)),
+            Vertex::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0), vec2(0.0, 0.0)),
+        ]
     }
 
     #[test]
     fn test_normal() {
-        let triangle = TestTriangle::new([
-            Vertex::new(vec3(1.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0), vec2(0.0, 0.0)),
-            Vertex::new(vec3(0.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0), vec2(0.0, 0.0)),
-            Vertex::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0), vec2(0.0, 0.0)),
-        ]);
+        let vertices = test_vertices();
+        let triangle = Triangle::new([VertexIdx(0), VertexIdx(1), VertexIdx(2)]);
 
-        assert_eq!(triangle.normal(), vec3(0.0, 0.0, 1.0));
+        assert_eq!(triangle.normal(&vertices), vec3(0.0, 0.0, 1.0));
     }
 
     #[test]
     fn test_ray_intersection() {
-        let triangle = TestTriangle::new([
-            Vertex::new(vec3(1.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0), vec2(0.0, 0.0)),
-            Vertex::new(vec3(0.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0), vec2(0.0, 0.0)),
-            Vertex::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0), vec2(0.0, 0.0)),
-        ]);
+        let vertices = test_vertices();
+        let triangle = Triangle::new([VertexIdx(0), VertexIdx(1), VertexIdx(2)]);
 
         let ray = Ray::new(vec3(0.25, 0.25, 1.0), vec3(0.0, 0.0, -1.0));
 
-        let intersection = triangle.ray_intersection(&ray).unwrap();
+        let intersection = triangle.ray_intersection(&ray, &vertices).unwrap();
 
         assert_eq!(intersection.t(), &1.0);
         assert_eq!(intersection.normal(), &vec3(0.0, 0.0, 1.0));
@@ -120,7 +123,7 @@ mod test {
 
         let ray = Ray::new(vec3(0.25, 0.25, 1.0), vec3(0.0, 0.0, 1.0));
 
-        let intersection = triangle.ray_intersection(&ray);
+        let intersection = triangle.ray_intersection(&ray, &vertices);
         assert_eq!(intersection, None);
     }
 }

@@ -1,6 +1,8 @@
 use glam::{Vec2, Vec3};
+#[cfg(test)]
+use std::ops::Index;
 
-/// Structure for storing a vertex of a mesh.
+/// Structure for storing a single vertex.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Vertex {
     position: Vec3,
@@ -31,5 +33,18 @@ impl Vertex {
     /// Returns the UV coordinate of the vertex.
     pub fn uv(&self) -> &Vec2 {
         &self.uv
+    }
+}
+
+/// A struct used for accessing a vertex by its index in some container.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct VertexIdx(pub u32);
+
+#[cfg(test)]
+impl Index<VertexIdx> for Vec<Vertex> {
+    type Output = Vertex;
+
+    fn index(&self, index: VertexIdx) -> &Self::Output {
+        &self[index.0 as usize]
     }
 }
